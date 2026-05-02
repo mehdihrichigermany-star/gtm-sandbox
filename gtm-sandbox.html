@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTM Sandbox — Terrain de jeu tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0e0e0e;
+    --white: #f5f4f0;
+    --accent: #00e676;
+    --accent-dim: #00c853;
+    --gray-1: #1a1a1a;
+    --gray-2: #242424;
+    --gray-3: #2e2e2e;
+    --gray-4: #444;
+    --gray-5: #888;
+    --gray-6: #bbb;
+    --tag-blue: #1565c0;
+    --tag-blue-bg: #e3f2fd;
+    --tag-green: #2e7d32;
+    --tag-green-bg: #e8f5e9;
+    --tag-orange: #e65100;
+    --tag-orange-bg: #fff3e0;
+    --tag-purple: #4a148c;
+    --tag-purple-bg: #f3e5f5;
+    --tag-red: #b71c1c;
+    --tag-red-bg: #ffebee;
+    --radius: 6px;
+    --radius-lg: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(14,14,14,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gray-3);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+  .nav-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    overflow-x: auto;
+    flex: 1;
+  }
+  .nav-links a {
+    color: var(--gray-5);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 0 14px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-label::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero p {
+    color: var(--gray-6);
+    font-size: 16px;
+    max-width: 600px;
+    margin-bottom: 2.5rem;
+  }
+  .gtm-snippet {
+    background: var(--gray-1);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .gtm-snippet-header {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-5);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .gtm-snippet code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #a5d6a7;
+    display: block;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .gtm-id-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .gtm-id-input input {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    background: var(--gray-2);
+    border: 1px solid var(--gray-4);
+    color: var(--white);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    width: 180px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .gtm-id-input input:focus { border-color: var(--accent); }
+  .gtm-id-input button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--accent);
+    color: var(--black);
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .gtm-id-input button:hover { background: var(--accent-dim); }
+  .gtm-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-5);
+    margin-top: 8px;
+  }
+  .gtm-status.ok { color: var(--accent); }
+
+  /* SECTIONS */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--gray-2);
+  }
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .section-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,230,118,0.08);
+    border: 1px solid rgba(0,230,118,0.2);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+  .section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .section-desc {
+    color: var(--gray-5);
+    font-size: 13px;
+    margin-bottom: 0;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-family: 'DM Mono', monospace;
+  }
+  .tag-blue { background: var(--tag-blue-bg); color: var(--tag-blue); }
+  .tag-green { background: var(--tag-green-bg); color: var(--tag-green); }
+  .tag-orange { background: var(--tag-orange-bg); color: var(--tag-orange); }
+  .tag-purple { background: var(--tag-purple-bg); color: var(--tag-purple); }
+  .tag-red { background: var(--tag-red-bg); color: var(--tag-red); }
+  .tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+  /* EVENT LOG */
+  .event-log-wrapper {
+    position: sticky;
+    top: 56px;
+    z-index: 50;
+    background: var(--gray-1);
+    border-bottom: 1px solid var(--gray-3);
+    padding: 10px 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .event-log-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .event-log-items {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    overflow-x: auto;
+    min-width: 0;
+  }
+  .event-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: var(--gray-2);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+    white-space: nowrap;
+    color: var(--gray-6);
+    animation: fadeIn 0.25s ease;
+  }
+  .event-pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .clear-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: none;
+    border: 1px solid var(--gray-3);
+    color: var(--gray-5);
+    border-radius: var(--radius);
+    padding: 3px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .clear-btn:hover { border-color: var(--gray-5); color: var(--white); }
+
+  /* CARDS GRID */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--gray-1);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--gray-4); }
+  .card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--gray-5);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    padding: 9px 18px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--black);
+  }
+  .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--gray-6);
+    border: 1px solid var(--gray-3);
+  }
+  .btn-ghost:hover { border-color: var(--gray-5); color: var(--white); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* FORM ELEMENTS */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    font-size: 12px;
+    color: var(--gray-5);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .form-control {
+    background: var(--gray-2);
+    border: 1px solid var(--gray-4);
+    color: var(--white);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-control:focus { border-color: var(--accent); }
+  select.form-control option { background: var(--gray-2); }
+
+  /* SCROLL DEPTH */
+  .scroll-zone {
+    background: linear-gradient(180deg, var(--gray-1) 0%, var(--gray-2) 100%);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scroll-zone-content {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .scroll-depth-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+    border-radius: 0 3px 3px 0;
+  }
+  .scroll-zone p { color: var(--gray-6); font-size: 14px; margin-bottom: 1rem; line-height: 1.7; }
+  .scroll-markers {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .scroll-marker {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: var(--radius);
+    background: var(--gray-2);
+    border: 1px solid var(--gray-4);
+    color: var(--gray-5);
+    transition: all 0.2s;
+  }
+  .scroll-marker.triggered {
+    background: rgba(0,230,118,0.1);
+    border-color: rgba(0,230,118,0.4);
+    color: var(--accent);
+  }
+
+  /* ECOMMERCE */
+  .product-card {
+    background: var(--gray-1);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .product-card:hover { border-color: var(--gray-4); }
+  .product-img {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-2);
+    font-size: 3rem;
+  }
+  .product-info { padding: 1rem; }
+  .product-name { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+  .product-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  /* TIMER */
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 3rem;
+    color: var(--accent);
+    text-align: center;
+    margin: 1.5rem 0;
+  }
+  .timer-events {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .timer-event-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 6px 12px;
+    background: var(--gray-2);
+    border-radius: var(--radius);
+    color: var(--gray-6);
+    animation: fadeIn 0.2s ease;
+  }
+  .timer-event-item span:last-child { color: var(--accent); }
+
+  /* DATALAYER VIEWER */
+  .dl-viewer {
+    background: var(--gray-1);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .dl-viewer-header {
+    background: var(--gray-2);
+    border-bottom: 1px solid var(--gray-3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dl-viewer-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gray-5);
+  }
+  .dl-events-list {
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dl-event-entry {
+    background: var(--gray-2);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+  }
+  .dl-event-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .dl-event-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .dl-event-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-5);
+  }
+  .dl-event-body {
+    padding: 0 12px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #a5d6a7;
+    white-space: pre;
+    overflow-x: auto;
+    display: none;
+    border-top: 1px solid var(--gray-3);
+    padding-top: 10px;
+    line-height: 1.6;
+  }
+  .dl-event-entry.expanded .dl-event-body { display: block; }
+  .dl-event-entry.expanded .dl-chevron { transform: rotate(90deg); }
+  .dl-chevron { transition: transform 0.2s; color: var(--gray-5); font-size: 10px; }
+  .dl-empty {
+    text-align: center;
+    color: var(--gray-4);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 2rem;
+  }
+
+  /* VISIBILITY */
+  .visibility-box {
+    border: 2px dashed var(--gray-4);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: default;
+  }
+  .visibility-box.visible {
+    border-color: var(--accent);
+    background: rgba(0,230,118,0.05);
+  }
+  .visibility-box .vis-icon { font-size: 2rem; }
+  .visibility-box .vis-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gray-5);
+  }
+  .visibility-box.visible .vis-label { color: var(--accent); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--gray-2);
+    padding: 2rem;
+    text-align: center;
+    color: var(--gray-4);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* TOOLTIPS hint */
+  .hint {
+    font-size: 12px;
+    color: var(--gray-4);
+    font-family: 'DM Mono', monospace;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint::before { content: '→'; color: var(--accent); }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    height: 4px;
+    background: var(--gray-3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* LINK TRACKER */
+  .link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tracked-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--gray-2);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--white);
+    transition: border-color 0.15s;
+    font-size: 14px;
+  }
+  .tracked-link:hover { border-color: var(--accent); color: var(--accent); }
+  .tracked-link-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-5);
+  }
+
+  /* VIDEO */
+  .video-player {
+    background: var(--gray-2);
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+  }
+  .video-mock {
+    height: 200px;
+    background: var(--black);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--gray-4);
+  }
+  .video-play-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0,230,118,0.15);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .video-play-btn:hover { background: rgba(0,230,118,0.3); }
+  .video-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .video-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gray-5);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">GTM_SANDBOX /</div>
+  <ul class="nav-links">
+    <li><a href="#pageview">Pageview</a></li>
+    <li><a href="#clicks">Clics</a></li>
+    <li><a href="#forms">Formulaires</a></li>
+    <li><a href="#scroll">Scroll</a></li>
+    <li><a href="#ecommerce">E-commerce</a></li>
+    <li><a href="#timer">Timer</a></li>
+    <li><a href="#visibility">Visibilité</a></li>
+    <li><a href="#links">Liens</a></li>
+    <li><a href="#video">Vidéo</a></li>
+    <li><a href="#datalayer">dataLayer</a></li>
+  </ul>
+</nav>
+
+<!-- EVENT LOG BAR -->
+<div class="event-log-wrapper">
+  <span class="event-log-label">dataLayer ▸</span>
+  <div class="event-log-items" id="eventLogItems">
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-4)">Aucun event capturé...</span>
+  </div>
+  <button class="clear-btn" onclick="clearLog()">Effacer</button>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">GTM Sandbox v1.0</div>
+  <h1>Terrain de jeu<br><em>Google Tag Manager</em></h1>
+  <p>Un site conçu pour pratiquer tous les types de déclencheurs, variables et tags GTM. Chaque section simule un cas réel que tu retrouveras en production.</p>
+
+  <div class="gtm-snippet">
+    <div class="gtm-snippet-header">Connecte ton conteneur GTM</div>
+    <code id="gtmSnippetCode">&lt;!-- Colle ton GTM-XXXXXXX ci-dessous --&gt;
+window.dataLayer = window.dataLayer || [];
+// Snippet GTM chargé automatiquement</code>
+    <div class="gtm-id-input">
+      <input type="text" id="gtmIdInput" placeholder="GTM-XXXXXXX" maxlength="15">
+      <button onclick="loadGTM()">Charger GTM</button>
+    </div>
+    <div class="gtm-status" id="gtmStatus">En attente d'un ID GTM...</div>
+  </div>
+</div>
+
+<!-- SECTION 1: PAGEVIEW -->
+<section class="section" id="pageview">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <div>
+      <h2>Pageview & Déclencheur Page Vue</h2>
+      <p class="section-desc">Le déclencheur de base — toute la logique GTM commence ici.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-blue">Trigger: All Pages</span>
+    <span class="tag tag-blue">Trigger: Some Pages</span>
+    <span class="tag tag-green">Variable: Page URL</span>
+    <span class="tag tag-green">Variable: Page Path</span>
+    <span class="tag tag-green">Variable: Referrer</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Infos de la page courante</h3>
+      <p>Variables disponibles dans GTM pour cette page.</p>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--gray-2);border-radius:var(--radius);">
+          <span style="color:var(--gray-5);font-family:'DM Mono',monospace;">Page URL</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-6)" id="infoUrl"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--gray-2);border-radius:var(--radius);">
+          <span style="color:var(--gray-5);font-family:'DM Mono',monospace;">Page Path</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-6)" id="infoPath"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--gray-2);border-radius:var(--radius);">
+          <span style="color:var(--gray-5);font-family:'DM Mono',monospace;">Title</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-6)" id="infoTitle"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--gray-2);border-radius:var(--radius);">
+          <span style="color:var(--gray-5);font-family:'DM Mono',monospace;">Referrer</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-6)" id="infoReferrer"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:var(--gray-2);border-radius:var(--radius);">
+          <span style="color:var(--gray-5);font-family:'DM Mono',monospace;">User Agent</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-6);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="infoUA"></span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Simuler une navigation SPA</h3>
+      <p>Les SPAs ne rechargent pas la page. Teste les "History Change" triggers de GTM.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-ghost" onclick="simulateSPANav('/produits')">→ /produits</button>
+        <button class="btn btn-ghost" onclick="simulateSPANav('/produits/chaussures')">→ /produits/chaussures</button>
+        <button class="btn btn-ghost" onclick="simulateSPANav('/panier')">→ /panier</button>
+        <button class="btn btn-ghost" onclick="simulateSPANav('/confirmation')">→ /confirmation</button>
+      </div>
+      <p class="hint">GTM → Nouveau déclencheur → Historique de navigation</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: CLICKS -->
+<section class="section" id="clicks">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <div>
+      <h2>Tracking des clics</h2>
+      <p class="section-desc">Click triggers — Element, Classes, IDs, Texte du lien.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-orange">Trigger: All Clicks</span>
+    <span class="tag tag-orange">Trigger: Some Clicks</span>
+    <span class="tag tag-green">Variable: Click ID</span>
+    <span class="tag tag-green">Variable: Click Classes</span>
+    <span class="tag tag-green">Variable: Click Text</span>
+    <span class="tag tag-green">Variable: Click URL</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Boutons avec attributs data-*</h3>
+      <p>Pratique les variables dataLayer et les sélecteurs CSS dans GTM.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="cta-hero" data-category="hero" data-action="click_primary" onclick="trackClick('cta_click', {button_id:'cta-hero', category:'hero', action:'click_primary'})">CTA Principal</button>
+        <button class="btn btn-ghost" id="cta-secondary" data-category="hero" data-action="click_secondary" onclick="trackClick('cta_click', {button_id:'cta-secondary', category:'hero', action:'click_secondary'})">CTA Secondaire</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Boutons avec classes CSS</h3>
+      <p>Utilise "Click Classes" comme condition dans tes triggers.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary track-conversion" onclick="trackClick('conversion_click', {button_class:'track-conversion', label:'Acheter maintenant'})">Acheter maintenant</button>
+        <button class="btn btn-ghost track-engagement" onclick="trackClick('engagement_click', {button_class:'track-engagement', label:'En savoir plus'})">En savoir plus</button>
+      </div>
+      <p class="hint">Conditions: Click Classes → contient → track-conversion</p>
+    </div>
+    <div class="card">
+      <h3>Clics sur un menu nav</h3>
+      <p>Simule un menu de navigation avec tracking par item.</p>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <a href="#" class="nav-item" onclick="event.preventDefault();trackClick('nav_click',{link_text:'Accueil',link_url:'/'});" style="padding:8px 12px;background:var(--gray-2);border-radius:var(--radius);font-size:14px;color:var(--white);text-decoration:none;display:flex;justify-content:space-between;align-items:center;">Accueil <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-5);">nav-item</span></a>
+        <a href="#" class="nav-item" onclick="event.preventDefault();trackClick('nav_click',{link_text:'Catalogue',link_url:'/catalogue'});" style="padding:8px 12px;background:var(--gray-2);border-radius:var(--radius);font-size:14px;color:var(--white);text-decoration:none;display:flex;justify-content:space-between;align-items:center;">Catalogue <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-5);">nav-item</span></a>
+        <a href="#" class="nav-item" onclick="event.preventDefault();trackClick('nav_click',{link_text:'Contact',link_url:'/contact'});" style="padding:8px 12px;background:var(--gray-2);border-radius:var(--radius);font-size:14px;color:var(--white);text-decoration:none;display:flex;justify-content:space-between;align-items:center;">Contact <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-5);">nav-item</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: FORMS -->
+<section class="section" id="forms">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <div>
+      <h2>Formulaires & Lead Generation</h2>
+      <p class="section-desc">Form Submit, abandon de formulaire, tracking par champ.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-purple">Trigger: Form Submission</span>
+    <span class="tag tag-purple">Trigger: Element Visibility</span>
+    <span class="tag tag-green">Variable: Form ID</span>
+    <span class="tag tag-green">Variable: DOM Element</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Formulaire de contact</h3>
+      <p>Déclenche form_submit, form_start et field_interaction.</p>
+      <form id="contact-form" onsubmit="handleFormSubmit(event, 'contact-form')">
+        <div class="form-group">
+          <label>Prénom</label>
+          <input class="form-control" type="text" name="firstname" placeholder="Jean" onfocus="trackFormStart('contact-form')" oninput="trackFieldInteraction('contact-form','firstname')">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input class="form-control" type="email" name="email" placeholder="jean@exemple.com" oninput="trackFieldInteraction('contact-form','email')">
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea class="form-control" name="message" rows="3" placeholder="Votre message..." oninput="trackFieldInteraction('contact-form','message')"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Envoyer le message</button>
+      </form>
+      <p class="hint">GTM → Trigger → Soumission de formulaire → ID : contact-form</p>
+    </div>
+    <div class="card">
+      <h3>Formulaire lead magnet</h3>
+      <p>Cas typique de génération de leads avec scoring.</p>
+      <form id="lead-form" onsubmit="handleFormSubmit(event, 'lead-form')">
+        <div class="form-group">
+          <label>Entreprise</label>
+          <input class="form-control" type="text" name="company" placeholder="Acme GmbH" onfocus="trackFormStart('lead-form')">
+        </div>
+        <div class="form-group">
+          <label>Taille de l'équipe</label>
+          <select class="form-control" name="team_size" onchange="trackFieldInteraction('lead-form','team_size')">
+            <option value="">Sélectionner...</option>
+            <option value="1-10">1–10</option>
+            <option value="11-50">11–50</option>
+            <option value="51-200">51–200</option>
+            <option value="200+">200+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Budget mensuel (€)</label>
+          <select class="form-control" name="budget" onchange="trackFieldInteraction('lead-form','budget')">
+            <option value="">Sélectionner...</option>
+            <option value="<1000">&lt; 1 000 €</option>
+            <option value="1000-5000">1 000–5 000 €</option>
+            <option value="5000+">5 000+ €</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Obtenir la démo</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: SCROLL -->
+<section class="section" id="scroll">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <div>
+      <h2>Scroll Depth Tracking</h2>
+      <p class="section-desc">Déclencheurs de profondeur de défilement — page entière et éléments.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-blue">Trigger: Scroll Depth</span>
+    <span class="tag tag-blue">Trigger: Element Visibility</span>
+    <span class="tag tag-green">Variable: Scroll Depth Threshold</span>
+    <span class="tag tag-green">Variable: Scroll Depth Units</span>
+  </div>
+  <div style="margin-bottom:1.5rem;">
+    <p style="font-size:13px;color:var(--gray-5);margin-bottom:12px;">Scroll depth sur la page entière (simule les seuils GTM 25/50/75/100%)</p>
+    <div class="scroll-markers" id="scrollMarkers">
+      <span class="scroll-marker" id="sm-25">25%</span>
+      <span class="scroll-marker" id="sm-50">50%</span>
+      <span class="scroll-marker" id="sm-75">75%</span>
+      <span class="scroll-marker" id="sm-100">100%</span>
+    </div>
+    <div class="progress-bar-wrap" style="margin-top:10px;">
+      <div class="progress-bar-fill" id="pageScrollBar" style="width:0%"></div>
+    </div>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-5)" id="scrollPct">0%</span>
+  </div>
+  <div class="scroll-zone">
+    <div class="scroll-depth-bar" id="innerScrollBar"></div>
+    <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:1rem;">Scroll dans cette zone → événements déclenchés</p>
+    <div class="scroll-zone-content" id="scrollableContent" onscroll="handleInnerScroll()">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. GTM peut tracker le scroll de toute la page, ou d'un élément div spécifique via le trigger "Element Visibility".</p>
+      <p>Cas d'usage : détecter si un utilisateur a lu jusqu'à la section pricing, ou s'il a vu la section témoignages jusqu'à la fin.</p>
+      <p>Pour les articles de blog, on combine souvent le scroll depth avec le temps passé sur la page pour qualifier l'engagement réel des lecteurs.</p>
+      <p>Le trigger "Scroll Depth" de GTM supporte les pourcentages (25, 50, 75, 100%) et les pixels absolus.</p>
+      <p>Important : ce trigger ne se déclenche qu'une seule fois par seuil par session de page. Si tu scrolles vers le bas puis remontes et descends encore, l'event 50% ne se re-déclenche pas.</p>
+      <p id="scroll-bottom-marker">🔚 Tu as atteint le bas de cette zone de contenu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: ECOMMERCE -->
+<section class="section" id="ecommerce">
+  <div class="section-header">
+    <span class="section-number">05</span>
+    <div>
+      <h2>E-commerce Events (GA4)</h2>
+      <p class="section-desc">view_item, add_to_cart, remove_from_cart, begin_checkout, purchase.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-red">GA4: view_item_list</span>
+    <span class="tag tag-red">GA4: add_to_cart</span>
+    <span class="tag tag-red">GA4: begin_checkout</span>
+    <span class="tag tag-red">GA4: purchase</span>
+  </div>
+  <div class="card-grid" id="productGrid">
+    <!-- Products injected by JS -->
+  </div>
+  <div style="margin-top:1.5rem;background:var(--gray-1);border:1px solid var(--gray-3);border-radius:var(--radius-lg);padding:1.5rem;">
+    <h3 style="font-family:'Syne',sans-serif;font-weight:600;margin-bottom:12px;">Panier <span id="cartCount" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);">(0 items)</span></h3>
+    <div id="cartItems" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
+      <p style="font-size:13px;color:var(--gray-5);font-family:'DM Mono',monospace;">Panier vide</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="trackBeginCheckout()">Begin Checkout</button>
+      <button class="btn btn-primary" onclick="trackPurchase()">Purchase ✓</button>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: TIMER -->
+<section class="section" id="timer">
+  <div class="section-header">
+    <span class="section-number">06</span>
+    <div>
+      <h2>Timer Trigger</h2>
+      <p class="section-desc">Déclencher des events après N secondes sur la page.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-orange">Trigger: Timer</span>
+    <span class="tag tag-green">Variable: Timer Interval</span>
+    <span class="tag tag-green">Variable: Timer Limit</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Simulateur de Timer GTM</h3>
+      <p>GTM envoie des events selon un intervalle. Simule les seuils 5s, 15s, 30s, 60s.</p>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="btn-row" style="justify-content:center;margin-bottom:1rem;">
+        <button class="btn btn-primary" id="timerStartBtn" onclick="startTimer()">▶ Démarrer</button>
+        <button class="btn btn-ghost" onclick="resetTimer()">↺ Reset</button>
+      </div>
+      <p class="hint">Events déclenchés : 5s, 15s, 30s, 60s</p>
+    </div>
+    <div class="card">
+      <h3>Events timer reçus</h3>
+      <p>Logs des events simulés par le timer.</p>
+      <div class="timer-events" id="timerEvents">
+        <div style="text-align:center;color:var(--gray-4);font-family:'DM Mono',monospace;font-size:12px;padding:1rem;">Démarrez le timer...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: VISIBILITY -->
+<section class="section" id="visibility">
+  <div class="section-header">
+    <span class="section-number">07</span>
+    <div>
+      <h2>Element Visibility Trigger</h2>
+      <p class="section-desc">Déclencher quand un élément entre dans le viewport.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-blue">Trigger: Element Visibility</span>
+    <span class="tag tag-green">Variable: CSS Selector</span>
+    <span class="tag tag-green">Variable: Element ID</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Zone visible détectée</h3>
+      <p>Ces éléments envoient un event quand ils deviennent visibles. Scroll vers eux.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="visibility-box" id="vis-cta" data-event="cta_visible">
+          <div class="vis-icon">🎯</div>
+          <div class="vis-label" id="vis-cta-label">En attente de visibilité...</div>
+        </div>
+        <div class="visibility-box" id="vis-pricing" data-event="pricing_section_visible">
+          <div class="vis-icon">💰</div>
+          <div class="vis-label" id="vis-pricing-label">Section Pricing</div>
+        </div>
+        <div class="visibility-box" id="vis-testimonial" data-event="testimonial_visible">
+          <div class="vis-icon">⭐</div>
+          <div class="vis-label" id="vis-testimonial-label">Témoignage client</div>
+        </div>
+      </div>
+      <p class="hint">GTM → Trigger → Visibilité de l'élément → ID: vis-cta</p>
+    </div>
+    <div class="card">
+      <h3>Configuration GTM</h3>
+      <p>Pour chaque boîte visible, configure un trigger comme suit :</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:var(--gray-2);border-radius:var(--radius);padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:#a5d6a7;">
+          Type: Element Visibility<br>
+          Méthode de sélection: ID<br>
+          ID élément: vis-cta<br>
+          Quand déclencher: Une fois par page<br>
+          Seuil minimum visible: 50%
+        </div>
+        <div style="background:var(--gray-2);border-radius:var(--radius);padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:#a5d6a7;">
+          Type: Element Visibility<br>
+          Méthode de sélection: CSS Selector<br>
+          Sélecteur: .visibility-box<br>
+          Observer tous les éléments: ✓
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: LINKS -->
+<section class="section" id="links">
+  <div class="section-header">
+    <span class="section-number">08</span>
+    <div>
+      <h2>Link Click Tracking</h2>
+      <p class="section-desc">Liens sortants, liens d'email, liens de téléphone, liens PDF.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-orange">Trigger: Just Links</span>
+    <span class="tag tag-green">Variable: Click URL</span>
+    <span class="tag tag-green">Variable: Click Text</span>
+  </div>
+  <div class="link-list">
+    <a href="#" class="tracked-link" onclick="event.preventDefault();trackClick('outbound_click',{link_url:'https://ads.google.com',link_text:'Google Ads',link_type:'outbound'});">
+      <span>Google Ads Platform</span>
+      <span class="tracked-link-url">https://ads.google.com</span>
+    </a>
+    <a href="#" class="tracked-link" onclick="event.preventDefault();trackClick('outbound_click',{link_url:'https://analytics.google.com',link_text:'Google Analytics',link_type:'outbound'});">
+      <span>Google Analytics</span>
+      <span class="tracked-link-url">https://analytics.google.com</span>
+    </a>
+    <a href="#" class="tracked-link" onclick="event.preventDefault();trackClick('email_click',{link_url:'mailto:contact@exemple.com',link_text:'Email Contact',link_type:'email'});">
+      <span>📧 contact@exemple.com</span>
+      <span class="tracked-link-url">mailto:contact@exemple.com</span>
+    </a>
+    <a href="#" class="tracked-link" onclick="event.preventDefault();trackClick('phone_click',{link_url:'tel:+33123456789',link_text:'+33 1 23 45 67 89',link_type:'phone'});">
+      <span>📞 +33 1 23 45 67 89</span>
+      <span class="tracked-link-url">tel:+33123456789</span>
+    </a>
+    <a href="#" class="tracked-link" onclick="event.preventDefault();trackClick('file_download',{link_url:'/docs/guide-gtm.pdf',link_text:'Guide GTM PDF',file_type:'pdf'});">
+      <span>📄 Guide GTM complet</span>
+      <span class="tracked-link-url">/docs/guide-gtm.pdf</span>
+    </a>
+  </div>
+  <p class="hint" style="margin-top:12px;">GTM → Trigger → Clics sur les liens → URL du lien → contient → mailto:</p>
+</section>
+
+<!-- SECTION 9: VIDEO -->
+<section class="section" id="video">
+  <div class="section-header">
+    <span class="section-number">09</span>
+    <div>
+      <h2>Video Tracking</h2>
+      <p class="section-desc">Simule les events YouTube/vidéo : play, pause, progress, complete.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-red">GA4: video_start</span>
+    <span class="tag tag-red">GA4: video_progress</span>
+    <span class="tag tag-red">GA4: video_complete</span>
+    <span class="tag tag-blue">Trigger: YouTube Video</span>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>Lecteur vidéo simulé</h3>
+      <p>Simule les events de tracking vidéo GA4 recommandés.</p>
+      <div class="video-player">
+        <div class="video-mock" onclick="toggleVideo()">
+          <div class="video-play-btn" id="videoPlayBtn">▶</div>
+        </div>
+        <div class="video-progress-wrap">
+          <span class="video-time" id="videoCurrentTime">0:00</span>
+          <div class="progress-bar-wrap" style="flex:1;margin:0;">
+            <div class="progress-bar-fill" id="videoProgressBar" style="width:0%;"></div>
+          </div>
+          <span class="video-time">2:34</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;" class="scroll-markers" id="videoMilestones">
+        <span class="scroll-marker" id="vm-10">10%</span>
+        <span class="scroll-marker" id="vm-25">25%</span>
+        <span class="scroll-marker" id="vm-50">50%</span>
+        <span class="scroll-marker" id="vm-75">75%</span>
+        <span class="scroll-marker" id="vm-100">Terminée</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Structure dataLayer vidéo</h3>
+      <p>Voici comment pousser un event vidéo vers GA4 via GTM.</p>
+      <div style="background:var(--gray-2);border-radius:var(--radius);padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:#a5d6a7;line-height:1.7;">
+        dataLayer.push({<br>
+        &nbsp;&nbsp;event: 'video_progress',<br>
+        &nbsp;&nbsp;video_title: 'GTM Tutorial',<br>
+        &nbsp;&nbsp;video_duration: 154,<br>
+        &nbsp;&nbsp;video_percent: 50,<br>
+        &nbsp;&nbsp;video_provider: 'youtube',<br>
+        &nbsp;&nbsp;video_url: 'https://...',<br>
+        &nbsp;&nbsp;visible: true<br>
+        });
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 10: DATALAYER VIEWER -->
+<section class="section" id="datalayer">
+  <div class="section-header">
+    <span class="section-number">10</span>
+    <div>
+      <h2>dataLayer Inspector</h2>
+      <p class="section-desc">Visualise tous les événements pushés dans le dataLayer pendant cette session.</p>
+    </div>
+  </div>
+  <div class="tags-row">
+    <span class="tag tag-green">Variable: dataLayer</span>
+    <span class="tag tag-green">Variable: Event</span>
+    <span class="tag tag-purple">Trigger: Custom Event</span>
+  </div>
+  <div style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem;font-weight:500;margin-bottom:10px;">Pousser un event custom</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input class="form-control" type="text" id="customEventName" placeholder="Nom de l'event (ex: test_event)" style="max-width:280px;">
+      <input class="form-control" type="text" id="customEventParam" placeholder="Paramètre (ex: label=test)" style="max-width:280px;">
+      <button class="btn btn-primary" onclick="pushCustomEvent()">Pousser →</button>
+    </div>
+    <p class="hint">Nomme ton event, ajoute un paramètre clé=valeur et observe le résultat</p>
+  </div>
+  <div class="dl-viewer">
+    <div class="dl-viewer-header">
+      <span class="dl-viewer-title">dataLayer events — Session courante</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);" id="dlCount">0 events</span>
+    </div>
+    <div class="dl-events-list" id="dlEventsList">
+      <div class="dl-empty">Aucun event dans le dataLayer. Interagis avec le site !</div>
+    </div>
+  </div>
+</section>
+
+<footer>GTM Sandbox — Pour la formation Google Tag Manager · dataLayer.push({event:'keep_learning'}) ·&nbsp;<span id="footerTime"></span></footer>
+
+<script>
+// =====================
+// STATE
+// =====================
+window.dataLayer = window.dataLayer || [];
+const allDLEvents = [];
+const cart = [];
+const timerMilestones = [5, 15, 30, 60];
+const firedTimerMilestones = new Set();
+const firedScrollMilestones = new Set();
+const firedPageScrollMilestones = new Set();
+const firedVideoMilestones = new Set();
+const firedVisibility = new Set();
+let timerInterval = null;
+let timerSeconds = 0;
+let videoPlaying = false;
+let videoInterval = null;
+let videoPct = 0;
+let formStartFired = {};
+
+// =====================
+// PRODUCTS DATA
+// =====================
+const products = [
+  {id:'SHOE-001', name:'Baskets Running Pro', price:89.99, category:'Chaussures', emoji:'👟'},
+  {id:'SHIRT-002', name:'T-shirt Tech', price:34.99, category:'Vêtements', emoji:'👕'},
+  {id:'BAG-003', name:'Sac à dos Urban', price:59.99, category:'Accessoires', emoji:'🎒'},
+];
+
+// =====================
+// CORE: dataLayer push
+// =====================
+function dlPush(obj) {
+  const ts = new Date().toLocaleTimeString('fr-FR');
+  window.dataLayer.push(obj);
+  allDLEvents.push({...obj, _ts: ts});
+  renderDLViewer();
+  addEventPill(obj.event || 'push', obj);
+}
+
+function trackClick(eventName, params) {
+  dlPush({event: eventName, ...params});
+}
+
+// =====================
+// EVENT LOG BAR
+// =====================
+function addEventPill(name, data) {
+  const container = document.getElementById('eventLogItems');
+  const existingEmpty = container.querySelector('span');
+  if (existingEmpty && existingEmpty.textContent.includes('Aucun')) existingEmpty.remove();
+
+  const pill = document.createElement('div');
+  pill.className = 'event-pill';
+  pill.innerHTML = `<span class="dot"></span>${name}`;
+  pill.title = JSON.stringify(data, null, 2);
+  container.appendChild(pill);
+  container.scrollLeft = container.scrollWidth;
+}
+
+function clearLog() {
+  document.getElementById('eventLogItems').innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--gray-4)">Aucun event capturé...</span>';
+}
+
+// =====================
+// DATALAYER VIEWER
+// =====================
+function renderDLViewer() {
+  const list = document.getElementById('dlEventsList');
+  const count = document.getElementById('dlCount');
+  count.textContent = allDLEvents.length + ' events';
+
+  if (allDLEvents.length === 0) {
+    list.innerHTML = '<div class="dl-empty">Aucun event dans le dataLayer. Interagis avec le site !</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  const reversed = [...allDLEvents].reverse();
+  reversed.forEach((ev, i) => {
+    const {_ts, ...payload} = ev;
+    const entry = document.createElement('div');
+    entry.className = 'dl-event-entry';
+    entry.innerHTML = `
+      <div class="dl-event-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <span class="dl-event-name">${ev.event || 'dataLayer.push'}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="dl-event-time">${_ts}</span>
+          <span class="dl-chevron">▶</span>
+        </div>
+      </div>
+      <div class="dl-event-body">${JSON.stringify(payload, null, 2)}</div>
+    `;
+    list.appendChild(entry);
+  });
+}
+
+function pushCustomEvent() {
+  const name = document.getElementById('customEventName').value.trim() || 'custom_event';
+  const paramRaw = document.getElementById('customEventParam').value.trim();
+  const obj = {event: name};
+  if (paramRaw.includes('=')) {
+    const [k, v] = paramRaw.split('=');
+    obj[k.trim()] = v.trim();
+  } else if (paramRaw) {
+    obj.param = paramRaw;
+  }
+  dlPush(obj);
+}
+
+// =====================
+// PAGEVIEW INFO
+// =====================
+document.getElementById('infoUrl').textContent = window.location.href.slice(0, 40) + '...';
+document.getElementById('infoPath').textContent = window.location.pathname || '/gtm-sandbox.html';
+document.getElementById('infoTitle').textContent = document.title;
+document.getElementById('infoReferrer').textContent = document.referrer || '(direct)';
+document.getElementById('infoUA').textContent = navigator.userAgent;
+document.getElementById('footerTime').textContent = new Date().toLocaleString('fr-FR');
+
+dlPush({event: 'gtm.js', 'gtm.start': new Date().getTime()});
+dlPush({event: 'pageview', page_url: window.location.href, page_title: document.title, page_referrer: document.referrer || '(direct)'});
+
+// =====================
+// GTM LOADER
+// =====================
+function loadGTM() {
+  const id = document.getElementById('gtmIdInput').value.trim().toUpperCase();
+  const status = document.getElementById('gtmStatus');
+  if (!id.match(/^GTM-[A-Z0-9]{4,8}$/)) {
+    status.textContent = '⚠ Format invalide. Exemple: GTM-XXXXXXX';
+    status.className = 'gtm-status';
+    return;
+  }
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtm.js?id=${id}`;
+  document.head.appendChild(s);
+  const ns = document.createElement('noscript');
+  ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${id}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+  document.body.insertBefore(ns, document.body.firstChild);
+  status.textContent = `✓ ${id} chargé — Ouvre GTM Preview Mode pour vérifier`;
+  status.className = 'gtm-status ok';
+  document.getElementById('gtmSnippetCode').textContent = `<!-- GTM --> (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','${id}');`;
+  dlPush({event: 'gtm_loaded', container_id: id});
+}
+
+// =====================
+// SPA NAVIGATION SIM
+// =====================
+function simulateSPANav(path) {
+  window.history.pushState({}, '', path);
+  dlPush({event: 'history_change', new_url: window.location.origin + path, new_path: path, old_path: window.location.pathname});
+}
+
+// =====================
+// FORMS
+// =====================
+function trackFormStart(formId) {
+  if (!formStartFired[formId]) {
+    formStartFired[formId] = true;
+    dlPush({event: 'form_start', form_id: formId});
+  }
+}
+function trackFieldInteraction(formId, fieldName) {
+  dlPush({event: 'form_field_interaction', form_id: formId, field_name: fieldName});
+}
+function handleFormSubmit(e, formId) {
+  e.preventDefault();
+  const data = new FormData(e.target);
+  const obj = {event: 'form_submit', form_id: formId};
+  data.forEach((v, k) => { if (v) obj['field_' + k] = v; });
+  dlPush(obj);
+  e.target.reset();
+  formStartFired[formId] = false;
+  const btn = e.target.querySelector('button[type=submit]');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Envoyé !';
+  btn.style.background = 'var(--accent)';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+}
+
+// =====================
+// SCROLL
+// =====================
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = Math.round((window.scrollY / h) * 100);
+  document.getElementById('pageScrollBar').style.width = pct + '%';
+  document.getElementById('scrollPct').textContent = pct + '%';
+  [25, 50, 75, 100].forEach(m => {
+    if (pct >= m && !firedPageScrollMilestones.has(m)) {
+      firedPageScrollMilestones.add(m);
+      document.getElementById('sm-' + m).classList.add('triggered');
+      dlPush({event: 'scroll_depth', scroll_depth_threshold: m, scroll_depth_units: 'percent'});
+    }
+  });
+});
+
+function handleInnerScroll() {
+  const el = document.getElementById('scrollableContent');
+  const pct = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+  document.getElementById('innerScrollBar').style.width = pct + '%';
+}
+
+// =====================
+// ECOMMERCE
+// =====================
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+  products.forEach(p => {
+    grid.innerHTML += `
+      <div class="product-card" onmouseover="fireViewItem('${p.id}')">
+        <div class="product-img">${p.emoji}</div>
+        <div class="product-info">
+          <div class="product-name">${p.name}</div>
+          <div class="product-price">€${p.price.toFixed(2)}</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" style="flex:1;" onclick="addToCart('${p.id}')">+ Panier</button>
+            <button class="btn btn-ghost" onclick="trackClick('select_item',{item_id:'${p.id}',item_name:'${p.name}',item_category:'${p.category}'})">Voir</button>
+          </div>
+        </div>
+      </div>`;
+  });
+  dlPush({event: 'view_item_list', item_list_id: 'main_catalog', items: products.map(p => ({item_id: p.id, item_name: p.name, price: p.price, item_category: p.category}))});
+}
+
+const viewedItems = new Set();
+function fireViewItem(id) {
+  if (viewedItems.has(id)) return;
+  viewedItems.add(id);
+  const p = products.find(x => x.id === id);
+  dlPush({event: 'view_item', currency: 'EUR', value: p.price, items: [{item_id: p.id, item_name: p.name, price: p.price, item_category: p.category, quantity: 1}]});
+}
+
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++;
+  else cart.push({...p, qty: 1});
+  dlPush({event: 'add_to_cart', currency: 'EUR', value: p.price, items: [{item_id: p.id, item_name: p.name, price: p.price, quantity: 1}]});
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('cartItems');
+  const count = document.getElementById('cartCount');
+  if (cart.length === 0) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--gray-5);font-family:\'DM Mono\',monospace;">Panier vide</p>';
+    count.textContent = '(0 items)';
+    return;
+  }
+  count.textContent = `(${cart.reduce((s, i) => s + i.qty, 0)} items)`;
+  container.innerHTML = cart.map(item => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--gray-2);border-radius:var(--radius);font-size:13px;">
+      <span>${item.emoji} ${item.name} ×${item.qty}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-family:'DM Mono',monospace;color:var(--accent);">€${(item.price * item.qty).toFixed(2)}</span>
+        <button onclick="removeFromCart('${item.id}')" style="background:none;border:none;color:var(--gray-5);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeFromCart(id) {
+  const idx = cart.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const p = cart[idx];
+  dlPush({event: 'remove_from_cart', currency: 'EUR', value: p.price, items: [{item_id: p.id, item_name: p.name, price: p.price, quantity: p.qty}]});
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+function trackBeginCheckout() {
+  if (cart.length === 0) return alert('Ajoute des produits au panier d\'abord.');
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  dlPush({event: 'begin_checkout', currency: 'EUR', value: +total.toFixed(2), items: cart.map(i => ({item_id: i.id, item_name: i.name, price: i.price, quantity: i.qty}))});
+}
+
+function trackPurchase() {
+  if (cart.length === 0) return alert('Ajoute des produits au panier d\'abord.');
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const txId = 'TXN-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  dlPush({event: 'purchase', transaction_id: txId, currency: 'EUR', value: +total.toFixed(2), tax: +(total * 0.2).toFixed(2), shipping: 4.95, items: cart.map(i => ({item_id: i.id, item_name: i.name, price: i.price, quantity: i.qty}))});
+  cart.length = 0;
+  renderCart();
+}
+
+renderProducts();
+
+// =====================
+// TIMER
+// =====================
+function startTimer() {
+  if (timerInterval) return;
+  dlPush({event: 'gtm.timer', 'gtm.timerEventNumber': 1, 'gtm.timerInterval': 1000});
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay();
+    timerMilestones.forEach(ms => {
+      if (timerSeconds >= ms && !firedTimerMilestones.has(ms)) {
+        firedTimerMilestones.add(ms);
+        const evName = 'time_on_page_' + ms + 's';
+        dlPush({event: evName, seconds_on_page: ms});
+        addTimerEvent(evName, ms + 's');
+      }
+    });
+    if (timerSeconds >= 60) { clearInterval(timerInterval); timerInterval = null; }
+  }, 1000);
+  document.getElementById('timerStartBtn').textContent = '⏸ En cours...';
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerSeconds = 0;
+  firedTimerMilestones.clear();
+  updateTimerDisplay();
+  document.getElementById('timerStartBtn').textContent = '▶ Démarrer';
+  document.getElementById('timerEvents').innerHTML = '<div style="text-align:center;color:var(--gray-4);font-family:\'DM Mono\',monospace;font-size:12px;padding:1rem;">Démarrez le timer...</div>';
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60).toString().padStart(2,'0');
+  const s = (timerSeconds % 60).toString().padStart(2,'0');
+  document.getElementById('timerDisplay').textContent = m + ':' + s;
+}
+
+function addTimerEvent(name, time) {
+  const container = document.getElementById('timerEvents');
+  const emptyMsg = container.querySelector('div');
+  if (emptyMsg && emptyMsg.textContent.includes('Démarrez')) emptyMsg.remove();
+  const item = document.createElement('div');
+  item.className = 'timer-event-item';
+  item.innerHTML = `<span>${name}</span><span>+${time}</span>`;
+  container.appendChild(item);
+}
+
+// =====================
+// VISIBILITY OBSERVER
+// =====================
+const visTargets = ['vis-cta', 'vis-pricing', 'vis-testimonial'];
+const visObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !firedVisibility.has(entry.target.id)) {
+      firedVisibility.add(entry.target.id);
+      entry.target.classList.add('visible');
+      const evName = entry.target.dataset.event;
+      document.getElementById(entry.target.id + '-label').textContent = '✓ Visible — event déclenché !';
+      dlPush({event: evName, element_id: entry.target.id, visible: true});
+    }
+  });
+}, {threshold: 0.5});
+
+visTargets.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) visObs.observe(el);
+});
+
+// =====================
+// VIDEO
+// =====================
+const VIDEO_DURATION = 154;
+function toggleVideo() {
+  if (!videoPlaying) {
+    videoPlaying = true;
+    document.getElementById('videoPlayBtn').textContent = '⏸';
+    if (videoPct === 0) dlPush({event: 'video_start', video_title: 'GTM Master Class', video_duration: VIDEO_DURATION, video_provider: 'simulation', video_percent: 0});
+    videoInterval = setInterval(() => {
+      videoPct = Math.min(100, videoPct + 0.65);
+      document.getElementById('videoProgressBar').style.width = videoPct + '%';
+      const elapsed = Math.round((videoPct / 100) * VIDEO_DURATION);
+      const m = Math.floor(elapsed / 60);
+      const s = elapsed % 60;
+      document.getElementById('videoCurrentTime').textContent = m + ':' + s.toString().padStart(2,'0');
+      [10, 25, 50, 75].forEach(ms => {
+        if (videoPct >= ms && !firedVideoMilestones.has(ms)) {
+          firedVideoMilestones.add(ms);
+          document.getElementById('vm-' + ms).classList.add('triggered');
+          dlPush({event: 'video_progress', video_percent: ms, video_title: 'GTM Master Class', video_duration: VIDEO_DURATION, video_current_time: elapsed});
+        }
+      });
+      if (videoPct >= 100 && !firedVideoMilestones.has(100)) {
+        firedVideoMilestones.add(100);
+        document.getElementById('vm-100').classList.add('triggered');
+        dlPush({event: 'video_complete', video_title: 'GTM Master Class', video_duration: VIDEO_DURATION});
+        clearInterval(videoInterval);
+        videoPlaying = false;
+        document.getElementById('videoPlayBtn').textContent = '↩';
+      }
+    }, 200);
+  } else {
+    videoPlaying = false;
+    document.getElementById('videoPlayBtn').textContent = '▶';
+    clearInterval(videoInterval);
+    dlPush({event: 'video_pause', video_percent: Math.round(videoPct), video_title: 'GTM Master Class'});
+  }
+}
+</script>
+</body>
+</html>
